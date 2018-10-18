@@ -15,18 +15,19 @@ function init() {
 
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-            // User is signed in.
-            loginFormDiv.style.display = "none";
-            tabsBar.style.display = "block";
-            homeButtonClick();
+            // User is already signed in
+            loginFormDiv.style.display = "none";    // Hides the login form
+            tabsBar.style.display = "block";        // Displays the tabs bar
+            homeButtonClick();                      // Redirects to home page
         } else {
-            // No user is signed in.
-            //logging in
+            // No user is signed in
+            // logging in
             var loginButton = document.getElementById('loginButton');
             var loginPassword = document.getElementById('loginPassword');
             loginButton.onclick = loginButtonClick;
             loginPassword.onkeypress = function(eventObj) {
-                enterKeyPress(eventObj, loginButtonClick);
+              // redirect to loginButtonClick if someone presses Enter key after entering ID and password
+              enterKeyPress(eventObj, loginButtonClick);
             };
 
             function loginButtonClick() {
@@ -38,13 +39,14 @@ function init() {
                 loginEmailValue += "@goa.bits-pilani.ac.in";
 
                 firebase.auth().signInWithEmailAndPassword(loginEmailValue, loginPasswordValue).then(function(snapshot) {
-                        //logged in
+                        // Log In successful
                         tabsBar.style.display = "block";
                         loginFormDiv.style.display = "none";
                         homeButtonClick();
 
                     },
                     function(error) {
+                      // Log in unsuccessful, display error message below password field for 5 seconds
                         var errorMessage = error.message;
                         loginText.innerHTML = errorMessage;
                         setTimeout(function() {
@@ -55,7 +57,7 @@ function init() {
         }
     });
 
-
+    // setting button click listeners for different tab pages
     var itemsButton = document.getElementById('itemsButton');
     itemsButton.onclick = itemsButtonClick;
     var eventsButton = document.getElementById('eventsButton');
@@ -70,45 +72,48 @@ function init() {
     logOutButton.onclick = logOutButtonClick;
     var referencesButton = document.getElementById('referencesButton');
     referencesButton.onclick = referencesButtonClick;
-    //more tab onclick listeners come here
 
 }
 
 function toDate(date) {
+  // converts date from datetime-local format of HTML to 'dd-mmm-yyyy hh:mm:00 PM/AM'
     var pos = date.indexOf('T');
     var finalDate = date.substring(0, pos) + " " + date.substring(pos + 1, date.length) + ":00";
     return (finalDate);
 }
 
 function enterKeyPress(eventObj, buttonFunction) {
+  // checks if pressed key is 'Enter' key (used in login form)
     if (eventObj.keyCode == 13)
         buttonFunction();
 }
 
 function displayModal(displayModalMessage, validateDisplayModalText, callbackFunc) {
-
+  // generic function for displaying a modal that requires confirmation (Eg deleting event/item history)
     var displayModal = document.getElementById('displayModal');
     var displayModalText = document.getElementById('displayModalText');
+    // validation button (Eg 'Yep' button in delete event/item history)
     var validateDisplayModalButton = document.getElementById('validateDisplayModalButton');
 
     displayModalText.innerHTML = displayModalMessage;
     validateDisplayModalButton.innerHTML = validateDisplayModalText;
 
     var displayModalClose = document.getElementById('displayModalClose');
-    // When the user clicks on the button, open the modal
+
     displayModal.style.display = "block";
 
+    // When the user clicks on the validation button, execute the callbackFunc(true)
     validateDisplayModalButton.onclick = function() {
         displayModal.style.display = "none";
         callbackFunc(true);
     }
 
-    // When the user clicks on <span> (x), close the modal
+    // When the user clicks on <span> (x), execute the callbackFunc(false)
     displayModalClose.onclick = function() {
             displayModal.style.display = "none";
             callbackFunc(false);
         }
-        // When the user clicks anywhere outside of the modal, close it
+    // When the user clicks anywhere outside of the modal, execute the callbackFunc(false)
     window.onclick = function(event) {
         if (event.target == displayModal) {
             displayModal.style.display = "none";
@@ -120,25 +125,38 @@ function displayModal(displayModalMessage, validateDisplayModalText, callbackFun
 
 
 function tabButtonClick(currTab) {
+  // executed when any of the tabs is clicked
     var tabs = ["homeDiv", "eventDiv", "membersDiv", "inventoryDiv", "itemsDiv", "referencesDiv"];
     for (var i = 0; i < tabs.length; i++) {
         if (tabs[i] == currTab) {
+          // display the tab page of clicked tab button
             var currentTab = document.getElementById(currTab);
             currentTab.style.display = "block";
         } else {
+          // hide tab pages of all other tabs
             var otherTab = document.getElementById(tabs[i]);
             otherTab.style.display = "none";
 
+            /* to revert any changes done on the tab page [not sure]
+            Eg - If you open the inventory tab for the first time, only 'Show All Items' and 'Show By Events' buttons are displayed.
+            If you select 'test1' event via the 'Show By Events' option of Inventory tab, it'll show issue history of 'test1'.
+            Now if you select some other tab and hide the inventory tab page simply, next time when you select inventory tab it will open up
+            with the issue history of 'test1' (exactly as you left it last). To prevent this, you clone the tab page (clone consists of only
+            the initial defined HTML code) and replace it with the current tab page so that everytime when you select inventory tab the page
+            displays the initial screen consisting only of 'Show All Items' and 'Show By Events' buttons
+            */
             var tabClone = otherTab.cloneNode(true);
             otherTab.parentNode.replaceChild(tabClone, otherTab);
         }
     }
+    // stop the loading animation once the page has loaded
     var loader = document.getElementById('loader');
     loader.style.display = "none";
 }
 
 function logOutButtonClick() {
     firebase.auth().signOut().then(function() {
+      // reload the page so it goes to login page
         location.reload();
     }, function(error) {
         console.log(error.message);
@@ -148,8 +166,10 @@ function logOutButtonClick() {
 
 function homeButtonClick() {
 
+    // display 'Home' tab page and hide all other tab pages
     tabButtonClick("homeDiv");
 
+    // start the loading animation
     var loader = document.getElementById('loader');
     loader.style.display = "block";
 
@@ -185,6 +205,7 @@ function homeButtonClick() {
         homeBlockHeading.innerHTML = currentUser.name;
         homeBlockContent.innerHTML = str;
         homeProfile.style.display = "block";
+        // stop the loading animation
         loader.style.display = "none";
     });
 
@@ -197,7 +218,7 @@ function homeButtonClick() {
         var currentUser = firebase.auth().currentUser;
 
         var changePasswordModalClose = document.getElementById('changePasswordModalClose');
-        // When the user clicks on the button, open the modal
+        // Open the modal since the user has clicked on the 'Change Password' button
         changePasswordModal.style.display = "block";
 
         var validateChangePasswordButton = document.getElementById('validateChangePasswordButton');
@@ -208,12 +229,16 @@ function homeButtonClick() {
             var newPasswordFieldText = document.getElementById('newPasswordFieldText');
 
             currentUser.updatePassword(newPassword.value).then(function() {
+              // password change successful
                 changePasswordModal.style.display = "none";
+                // reverting the dynamic changes to changePasswordModal and setting it to initial HTML
                 changePasswordModal.innerHTML = changePasswordModalContent;
+                // calling displayModal but without any validation action
                 displayModal("Update Successful", "OK", function callbackFunc(val) {});
             }, function(error) {
                 changePasswordModal.style.display = "none";
                 changePasswordModal.innerHTML = changePasswordModalContent;
+                // calling displayModal but without any validation action
                 displayModal("Couldn't Update! Login Again", "OK", function callbackFunc(val) {});
             });
         }
@@ -223,7 +248,7 @@ function homeButtonClick() {
                 changePasswordModal.style.display = "none";
                 changePasswordModal.innerHTML = changePasswordModalContent;
             }
-            // When the user clicks anywhere outside of the modal, close it
+        // When the user clicks anywhere outside of the modal, close it
         window.onclick = function(event) {
             if (event.target == changePasswordModal) {
                 changePasswordModal.style.display = "none";
@@ -237,48 +262,53 @@ function homeButtonClick() {
 
 function eventsButtonClick() {
 
+    // display 'Events' tab page and hide all other tab pages
     tabButtonClick("eventDiv");
-
+    // start the loading animation
     var loader = document.getElementById('loader');
     loader.style.display = "block";
 
-    //add event modal comes here
     var addEventModal = document.getElementById('addEventModal');
     var addEventButton = document.getElementById("addEventButton");
-    // Get the <span> element that closes the modal
     var addEventModalClose = document.getElementById("addEventModalClose");
-    // When the user clicks on the button, open the modal
+
     addEventButton.onclick = function() {
             database.ref('Users/' + currentUserId).once('value', function(snapshot) {
+              // Need snapshot value of 'Users' child if event addition can be only done by Coordies, else not needed
                 var currentUserRole = snapshot.val().role;
+                // display the 'Add Event' modal
                 addEventModal.style.display = "block";
                 var validateEventButton = document.getElementById('validateEventButton');
                 validateEventButton.onclick = function() {
                         var eventExitTime = toDate(document.getElementById('eventExitTime').value);
                         var eventEntryTime = toDate(document.getElementById('eventEntryTime').value);
+                        // create JSON object to be pushed to firebase database
                         var eventEntry = {
                             end: eventExitTime,
                             name: document.getElementById('eventName').value,
                             place: document.getElementById('eventVenue').value,
                             start: eventEntryTime
                         };
+                        // push to 'Events' child in firebase database
                         database.ref('Event').push(eventEntry);
+                        // close the modal
                         addEventModal.style.display = "none";
                     }
-                    // else {
-                    //     var addEventButtonText = document.getElementById('addEventButtonText');
-                    //     addEventButtonText.innerHTML = "You are not a Co-ordinator";
-                    //     setTimeout(function() {
-                    //         addEventButtonText.innerHTML = "";
-                    //     }, 2000);
-                    // }
+                    // if non-coordinator tries to add event
+                    /* else {
+                        var addEventButtonText = document.getElementById('addEventButtonText');
+                        addEventButtonText.innerHTML = "You are not a Co-ordinator";
+                        setTimeout(function() {
+                            addEventButtonText.innerHTML = "";
+                        }, 2000);
+                    } */
             });
         }
-        // When the user clicks on <span> (x), close the modal
+    // When the user clicks on <span> (x), close the modal
     addEventModalClose.onclick = function() {
             addEventModal.style.display = "none";
         }
-        // When the user clicks anywhere outside of the modal, close it
+    // When the user clicks anywhere outside of the modal, close it
     window.onclick = function(event) {
         if (event.target == addEventModal) {
             addEventModal.style.display = "none";
@@ -287,18 +317,22 @@ function eventsButtonClick() {
 
 
     database.ref('Event').on('value', function(snapshot) {
+      // to update 'Events List' whenever change in Events child
         var eventList = document.getElementById("eventListTable");
         var data = snapshot.val();
         var str = '';
         for (var key in data) {
+          // iterating over all event keys in 'Events' child
             if (data.hasOwnProperty(key)) {
+                // button to delete event [shown as (x) at the end of each row]
                 var buttonId = key + 'button';
-                //converting firebase data to html
+                // converting firebase data to html
                 str = "<tr> <td>" + data[key].name + "</td><td>" + data[key].place + "</td><td>" + data[key].start + "</td><td>" + data[key].end + '</td><td><button class="buttonA" id="' + buttonId + '">X</button></td></tr>' + str;
             }
         }
         str = '<thead><th colspan="4">EVENTS LIST</th></thead><th>Event Name</th> <th> Venue </th> <th> Entry Time </th> <th>Exit Time</th>' + str;
 
+        // stop the loader animation
         loader.style.display = "none";
         eventList.innerHTML = str;
         //setting listeners for delete event button
@@ -310,25 +344,33 @@ function eventsButtonClick() {
     });
 
     function deleteEventClick(event) {
+      // deletes event and history of all its items completely
         database.ref('Users/' + currentUserId).once('value', function(snapshot) {
             var currentUserRole = snapshot.val().role;
+            // event deletion rights only with coordinator
             if (currentUserRole == 1) {
                 displayModal("You sure? All items corresponding to this event will also be deleted", "Yep", function callbackFunc(val) {
                     if (val) {
+                      // validation button clicked
                         var button = event.target;
                         var eventKey = button.id.substring(0, button.id.length - 6);
                         database.ref('Event/' + eventKey + '/items').once('value', function(snapshot) {
                             var itemsList = snapshot.val();
                             for (var key in itemsList) {
+                              // iterating over all items issued to that event
                                 var itemId = itemsList[key].item;
+                                // removing item's history of the event
                                 database.ref('Items/' + itemId + '/history/' + key).remove();
+                                // removing inventory issued history
                                 database.ref('Inventory/' + key).remove();
                             }
                         });
+                        // removing event child
                         database.ref('Event/' + eventKey).remove();
                     }
                 });
             } else {
+              // if non-coordinator tries to delete event
                 var addEventButtonText = document.getElementById('addEventButtonText');
                 addEventButtonText.innerHTML = "You are not a Co-ordinator";
                 setTimeout(function() {
